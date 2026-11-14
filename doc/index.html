@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Master Controller Teardown</title>
+<meta name="description" content="Scroll through a 3D teardown of a 3D-printed haptic master controller for a surgical robot simulator.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: scroll teardown. A full-height 3D stage stays pinned while chapter cards scroll over it;
+   each chapter pulls one subassembly off, from the handle down to the base. */
+:root {
+  --bg: #e8eef0; --bg-2: #d4dde1; --panel: rgba(255, 255, 255, .9); --fg: #172024; --muted: #56656b; --line: #cdd7db;
+  --accent: #1f6f69; --accent-soft: rgba(31, 111, 105, .12); --grid: #a9b6bc;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1517; --bg-2: #18232a; --panel: rgba(21, 30, 34, .9); --fg: #e4ebed; --muted: #95a5aa; --line: #2b3a40;
+  --accent: #5cb8b0; --accent-soft: rgba(92, 184, 176, .14); --grid: #2e3d44; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1517; --bg-2: #18232a; --panel: rgba(21, 30, 34, .9); --fg: #e4ebed; --muted: #95a5aa; --line: #2b3a40;
+  --accent: #5cb8b0; --accent-soft: rgba(92, 184, 176, .14); --grid: #2e3d44; color-scheme: dark }
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+html, body { margin: 0 }
+body { background: var(--bg); color: var(--fg); font: 400 15px/1.6 var(--body); overflow-x: hidden }
+
+.teardown { position: relative }
+.stage { position: sticky; top: 0; height: 100vh; height: 100svh; width: 100%; overflow: hidden;
+  background: radial-gradient(120% 90% at 65% 40%, var(--bg) 0%, var(--bg-2) 100%) }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: pan-y }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--muted); font: 400 13px var(--mono) }
+.rail { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: 50%; transform: translateY(-50%);
+  display: grid; gap: 14px; list-style: none; margin: 0; padding: 0 }
+.rail li { display: flex; align-items: center; gap: 10px; justify-content: flex-end; font: 500 11px var(--mono); color: var(--muted); letter-spacing: .04em }
+.rail li span { opacity: 0; transform: translateX(6px); transition: opacity .3s, transform .3s }
+.rail li i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--muted); transition: background .3s, border-color .3s, transform .3s }
+.rail li.on { color: var(--fg) }
+.rail li.on span { opacity: 1; transform: none }
+.rail li.on i { background: var(--accent); border-color: var(--accent); transform: scale(1.35) }
+.rail li.done i { background: var(--muted) }
+@media (max-width: 720px) { .rail { display: none } }
+.scrollhint { position: absolute; left: 50%; bottom: max(22px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  font: 500 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); display: grid; justify-items: center; gap: 6px; transition: opacity .4s }
+.scrollhint b { width: 1.5px; height: 28px; background: linear-gradient(var(--muted), transparent); animation: drip 1.8s ease-in-out infinite }
+@keyframes drip { 0% { transform: scaleY(.2); transform-origin: top } 50% { transform: scaleY(1); transform-origin: top } 100% { transform: scaleY(.2); transform-origin: bottom } }
+
+.chapters { position: relative; margin-top: -100vh; margin-top: -100svh; pointer-events: none }
+.chapter { min-height: 125vh; min-height: 125svh; display: flex; align-items: center;
+  padding-block: 12vh; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.chapter.hero { min-height: 100vh; min-height: 100svh; align-items: flex-start; padding-block: 11vh 0 }
+.inner { width: 100%; max-width: 1240px; margin: 0 auto }
+.card { pointer-events: auto; max-width: 400px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 22px 24px; display: grid; gap: 12px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px) }
+.right .card { margin-left: auto; margin-right: 56px }
+@media (max-width: 720px) {
+  .chapter { align-items: flex-end; padding-block: 0 8vh }
+  .right .card { margin: 0 }
+  .card { max-width: none }
+}
+.num { font: 500 12px var(--mono); color: var(--accent); letter-spacing: .08em; text-transform: uppercase }
+h2 { font: 800 clamp(24px, 3.2vw, 34px)/1.08 var(--display); margin: 0; letter-spacing: -.015em; text-wrap: balance }
+.card p { margin: 0; color: var(--fg) }
+.chips { display: flex; flex-wrap: wrap; gap: 6px }
+.chips span { display: inline-flex; align-items: center; gap: 6px; font: 500 12px var(--body); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px 2px 7px; color: var(--fg) }
+.chips i { width: 9px; height: 9px; border-radius: 2px }
+.spec { font: 500 12px var(--mono); color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; font-variant-numeric: tabular-nums }
+
+.hero .inner { display: grid; gap: 14px; max-width: 1240px }
+.eyebrow { font: 500 12px var(--mono); color: var(--accent); letter-spacing: .1em; text-transform: uppercase }
+h1 { font: 800 clamp(40px, 7.4vw, 96px)/.95 var(--display); margin: 0; letter-spacing: -.03em; max-width: 9ch; text-wrap: balance }
+.lede { max-width: 46ch; font-size: clamp(15px, 1.4vw, 18px); color: var(--muted); margin: 0 }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 6px }
+.stats div { display: grid }
+.stats b { font: 700 26px/1.1 var(--display); font-variant-numeric: tabular-nums }
+.stats span { font: 400 12px var(--mono); color: var(--muted) }
+
+.tally { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px }
+.tally div { display: grid; border-top: 1px solid var(--line); padding-top: 8px }
+.tally b { font: 700 24px/1.1 var(--display); font-variant-numeric: tabular-nums }
+.tally span { font-size: 12.5px; color: var(--muted) }
+.outro { min-height: 70vh; min-height: 70svh }
+.outro .card { margin: 0 auto; text-align: center; justify-items: center; max-width: 440px }
+@media (prefers-reduced-motion: reduce) { .scrollhint b { animation: none } .rail li span, .rail li i { transition: none } }
+</style>
+</head>
+<body>
+
+
+<div class="teardown" id="teardown">
+  <div class="stage" id="stage">
+    <canvas id="td-canvas" aria-label="3D model of the master controller coming apart as the page scrolls"></canvas>
+    <div class="loading" id="td-loading">Loading the controller…</div>
+    <ol class="rail" id="rail" aria-hidden="true"></ol>
+    <div class="scrollhint" id="hint">Scroll to take it apart<b></b></div>
+  </div>
+
+  <div class="chapters" id="chapters">
+    <section class="chapter hero" data-ch="0">
+      <div class="inner">
+        <div class="eyebrow">Haptic master controller · v0.1</div>
+        <h1>Inside the controller</h1>
+        <p class="lede">A 3D-printed hand controller for a surgical-robot simulator. It reads every joint and pushes back with real force when the virtual instruments touch something. Scroll to take it apart.</p>
+        <div class="stats">
+          <div><b>72</b><span>parts</span></div>
+          <div><b>4</b><span>force-feedback joints</span></div>
+          <div><b>5</b><span>magnetic encoders</span></div>
+          <div><b>400 Hz</b><span>haptic loop</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" data-ch="1"><div class="inner"><div class="card">
+      <div class="num">01 · Grip</div>
+      <h2>Handle and pinch lever</h2>
+      <p>The part your hand holds. A 130 motor in the handle pulls the pinch lever through a braided-line capstan at about 4.4 : 1, so you feel it when the virtual jaws close on something. An AS5600 in the fork wall reads the lever from a magnet in its pivot.</p>
+      <div class="chips" data-steps="10,11"></div>
+      <div class="spec">Wrist roll: free, read on the M8 axle tip</div>
+    </div></div></section>
+
+    <section class="chapter right" data-ch="2"><div class="inner"><div class="card">
+      <div class="num">02 · Elbow</div>
+      <h2>Forearm</h2>
+      <p>136 mm from elbow to wrist. One end carries the elbow capstan sector, the other two wrist bearings and the wrist encoder. Two nuts lock the elbow axle to the forearm, so a magnet on its tip reads the elbow angle.</p>
+      <div class="chips" data-steps="9"></div>
+      <div class="spec">Elbow drive (J3): about 6 : 1</div>
+    </div></div></section>
+
+    <section class="chapter" data-ch="3"><div class="inner"><div class="card">
+      <div class="num">03 · Shoulder</div>
+      <h2>Upper arm and shoulder axle</h2>
+      <p>The upper arm carries the elbow motor and swings on the shoulder axle. The sector behind the pivot is the shoulder capstan. The sensor cup on the end of the axle reads the shoulder angle without touching it.</p>
+      <div class="chips" data-steps="6,7,8"></div>
+      <div class="spec">Shoulder drive (J2): about 8.5 : 1 · link 130 mm</div>
+    </div></div></section>
+
+    <section class="chapter right" data-ch="4"><div class="inner"><div class="card">
+      <div class="num">04 · Yaw</div>
+      <h2>Turntable</h2>
+      <p>The yaw stage. Its 156 mm rim is the biggest capstan on the controller, driven by a drum on the motor below. The yoke on top carries the shoulder bearings and the shoulder motor.</p>
+      <div class="chips" data-steps="3,4"></div>
+      <div class="spec">Yaw drive (J1): about 14.7 : 1</div>
+    </div></div></section>
+
+    <section class="chapter" data-ch="5"><div class="inner"><div class="card">
+      <div class="num">05 · Base</div>
+      <h2>Base and yaw sensing</h2>
+      <p>A flat plate on four 38 mm feet. The yaw motor stands upright in a clamp sleeve, and the yaw encoder sits underneath, reading a magnet on the bottom of the yaw axle.</p>
+      <div class="chips" data-steps="1,2,5"></div>
+      <div class="spec">Two 608 bearings carry the yaw axle</div>
+    </div></div></section>
+
+    <section class="chapter right" data-ch="6"><div class="inner"><div class="card">
+      <div class="num">06 · Everything</div>
+      <h2>72 parts, one hand</h2>
+      <div class="tally">
+        <div><b>20</b><span>printed parts</span></div>
+        <div><b>4</b><span>motors: 3 RS-385, one 130</span></div>
+        <div><b>5 + 5</b><span>AS5600 boards and magnets</span></div>
+        <div><b>8</b><span>608 bearings</span></div>
+        <div><b>4</b><span>M8 axles</span></div>
+        <div><b>26</b><span>screws, nuts and bolts</span></div>
+      </div>
+      <p>Build two, one per hand. The left one prints from mirrored files.</p>
+    </div></div></section>
+
+    <section class="chapter outro" data-ch="7"><div class="inner"><div class="card">
+      <div class="num">Built in 24 hours</div>
+      <h2>Scroll back up to put it together</h2>
+      <p>Arduino UNO Q firmware, a Python serial bridge and a Godot 4 simulator complete the system.</p>
+    </div></div></section>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+(function () {
+  "use strict";
+  const loadingEl = document.getElementById("td-loading");
+  function fail(msg) { loadingEl.hidden = false; loadingEl.textContent = "The 3D model could not load: " + msg; }
+  if (!window.THREE || !THREE.GLTFLoader) { fail("the 3D library was blocked."); return; }
+
+  /* Model metadata: type, build step and explode offset (mm, Z up) for each node in the GLB. */
+  const META = {"n000": {"t": "base", "l": "", "s": 1, "o": [0, 0, 0]}, "n001": {"t": "turntable", "l": "", "s": 3, "o": [0, 0, 55]}, "n002": {"t": "upper_arm", "l": "", "s": 6, "o": [0, 0, 115]}, "n003": {"t": "forearm", "l": "", "s": 9, "o": [35, 0, 165]}, "n004": {"t": "handle", "l": "", "s": 10, "o": [95, 0, 200]}, "n005": {"t": "grip_lever", "l": "", "s": 10, "o": [95, 0, 160]}, "n006": {"t": "drum_385", "l": "J1", "s": 2, "o": [-30, 0, 30]}, "n007": {"t": "drum_385", "l": "J2", "s": 3, "o": [0, -40, 55]}, "n008": {"t": "drum_385", "l": "J3", "s": 6, "o": [0, 0, 155]}, "n009": {"t": "drum_130", "l": "", "s": 10, "o": [95, -35, 200]}, "n010": {"t": "base_sensor_bracket", "l": "", "s": 5, "o": [0, 0, -95]}, "n011": {"t": "foot", "l": "", "s": 1, "o": [-21.3, -13.1, -45]}, "n012": {"t": "foot", "l": "", "s": 1, "o": [-21.3, 13.1, -45]}, "n013": {"t": "foot", "l": "", "s": 1, "o": [16.1, -19.1, -45]}, "n014": {"t": "foot", "l": "", "s": 1, "o": [16.1, 19.1, -45]}, "n015": {"t": "sensor_cup", "l": "", "s": 8, "o": [0, -100, 55]}, "n016": {"t": "magnet_cap", "l": "J1", "s": 5, "o": [0, 0, -60]}, "n017": {"t": "magnet_cap", "l": "J2", "s": 8, "o": [0, -45, 115]}, "n018": {"t": "magnet_cap", "l": "elbow", "s": 9, "o": [35, -40, 165]}, "n019": {"t": "magnet_cap", "l": "wrist", "s": 11, "o": [35, 0, 210]}, "n020": {"t": "bearing_608", "l": "base, upper", "s": 1, "o": [0, 0, 22]}, "n021": {"t": "bearing_608", "l": "base, lower", "s": 1, "o": [0, 0, -25]}, "n022": {"t": "screw_m4", "l": "foot", "s": 1, "o": [-23.2, -25.0, 30]}, "n023": {"t": "nut_m4", "l": "foot", "s": 1, "o": [-23.2, -25.0, -70]}, "n024": {"t": "screw_m4", "l": "foot", "s": 1, "o": [-23.2, 25.0, 30]}, "n025": {"t": "nut_m4", "l": "foot", "s": 1, "o": [-23.2, 25.0, -70]}, "n026": {"t": "screw_m4", "l": "foot", "s": 1, "o": [12.1, -25.0, 30]}, "n027": {"t": "nut_m4", "l": "foot", "s": 1, "o": [12.1, -25.0, -70]}, "n028": {"t": "screw_m4", "l": "foot", "s": 1, "o": [12.1, 25.0, 30]}, "n029": {"t": "nut_m4", "l": "foot", "s": 1, "o": [12.1, 25.0, -70]}, "n030": {"t": "motor_385", "l": "J1", "s": 2, "o": [-70, 0, 0]}, "n031": {"t": "screw_m3", "l": "J1 clamp", "s": 2, "o": [-70, -25, 0]}, "n032": {"t": "nut_m3", "l": "J1 clamp", "s": 2, "o": [-70, 25, 0]}, "n033": {"t": "bearing_608", "l": "J2, +Y", "s": 3, "o": [0, 25, 55]}, "n034": {"t": "bearing_608", "l": "J2, -Y", "s": 3, "o": [0, -25, 55]}, "n035": {"t": "motor_385", "l": "J2", "s": 3, "o": [0, 60, 55]}, "n036": {"t": "screw_m3", "l": "J2 clamp", "s": 3, "o": [-25, 60, 55]}, "n037": {"t": "nut_m3", "l": "J2 clamp", "s": 3, "o": [25, 60, 55]}, "n038": {"t": "screw_m3", "l": "J1 cable tension", "s": 3, "o": [0, 0, 80]}, "n039": {"t": "bolt_m8", "l": "J1 axle, M8 \u00d7 65", "s": 4, "o": [0, 0, 175]}, "n040": {"t": "magnet", "l": "J1", "s": 5, "o": [0, 0, -68]}, "n041": {"t": "as5600", "l": "J1", "s": 5, "o": [0, 0, -82]}, "n042": {"t": "screw_m3", "l": "J1 bracket", "s": 5, "o": [0, 0, -120]}, "n043": {"t": "screw_m3", "l": "J1 bracket", "s": 5, "o": [0, 0, -120]}, "n044": {"t": "bearing_608", "l": "elbow, +Y", "s": 6, "o": [0, 0, 85]}, "n045": {"t": "bearing_608", "l": "elbow, -Y", "s": 6, "o": [0, 0, 73]}, "n046": {"t": "motor_385", "l": "J3", "s": 6, "o": [0, 55, 115]}, "n047": {"t": "screw_m3", "l": "J3 clamp", "s": 6, "o": [-25, 55, 115]}, "n048": {"t": "nut_m3", "l": "J3 clamp", "s": 6, "o": [25, 55, 115]}, "n049": {"t": "as5600", "l": "elbow", "s": 6, "o": [0, -70, 115]}, "n050": {"t": "screw_m3", "l": "J2 cable tension", "s": 6, "o": [0, 25, 115]}, "n051": {"t": "screw_m3", "l": "J2 cable tension", "s": 6, "o": [0, 25, 115]}, "n052": {"t": "bolt_m8", "l": "J2 axle, M8 \u00d7 75", "s": 7, "o": [0, 110, 115]}, "n053": {"t": "nut_m8", "l": "J2 axle", "s": 7, "o": [0, 0, 155]}, "n054": {"t": "nut_m8", "l": "J2 axle", "s": 7, "o": [0, 0, 167]}, "n055": {"t": "magnet", "l": "J2", "s": 8, "o": [0, -55, 115]}, "n056": {"t": "as5600", "l": "J2", "s": 8, "o": [0, -88, 55]}, "n057": {"t": "bearing_608", "l": "wrist, inner", "s": 9, "o": [35, 0, 197]}, "n058": {"t": "bearing_608", "l": "wrist, outer", "s": 9, "o": [65, 0, 165]}, "n059": {"t": "as5600", "l": "wrist", "s": 9, "o": [0, 0, 165]}, "n060": {"t": "screw_m3", "l": "J3 cable tension", "s": 9, "o": [35, 25, 165]}, "n061": {"t": "screw_m3", "l": "J3 cable tension", "s": 9, "o": [35, 25, 165]}, "n062": {"t": "bolt_m8", "l": "elbow axle, M8 \u00d7 45 cut to 43", "s": 9, "o": [35, 90, 165]}, "n063": {"t": "nut_m8", "l": "elbow axle", "s": 9, "o": [35, 30, 165]}, "n064": {"t": "nut_m8", "l": "elbow axle", "s": 9, "o": [35, -20, 165]}, "n065": {"t": "magnet", "l": "elbow", "s": 9, "o": [35, -48, 165]}, "n066": {"t": "motor_130", "l": "grip", "s": 10, "o": [95, 50, 200]}, "n067": {"t": "as5600", "l": "grip", "s": 10, "o": [95, -50, 200]}, "n068": {"t": "magnet", "l": "grip", "s": 10, "o": [95, -25, 160]}, "n069": {"t": "screw_m3", "l": "grip pivot", "s": 10, "o": [95, 40, 160]}, "n070": {"t": "bolt_m8", "l": "wrist axle, M8 \u00d7 40", "s": 11, "o": [165, 0, 200]}, "n071": {"t": "magnet", "l": "wrist", "s": 11, "o": [35, 0, 217]}, "n072": {"t": "harness", "l": "arm bundle", "s": 12, "o": [0, 0, 0]}, "n073": {"t": "harness", "l": "J1 + J2 sensor leads", "s": 12, "o": [0, 0, 0]}, "n074": {"t": "harness", "l": "J1 + J2 sensor leads", "s": 12, "o": [0, 0, 0]}};
+  const MODEL_URL = window.TEARDOWN_MODEL_URL || "controller.glb";
+
+  const TYPES = {
+    base: ["Base", "#8996a2"], foot: ["Foot", "#5f6a74"], turntable: ["Turntable", "#4f7fb8"],
+    upper_arm: ["Upper arm", "#d98a3d"], forearm: ["Forearm", "#5aa070"], handle: ["Handle", "#c0606f"],
+    grip_lever: ["Grip lever", "#8c6bb1"], drum_385: ["Capstan drum", "#3a4146"], drum_130: ["Grip drum", "#5b6369"],
+    sensor_cup: ["Sensor cup", "#c9a43b"], base_sensor_bracket: ["Sensor bracket", "#d6b85a"], magnet_cap: ["Magnet cap", "#27a3b8"],
+    motor_385: ["RS-385 motor", "#bfc5cb", .75], motor_130: ["130 motor", "#c9ced3", .75], as5600: ["AS5600 encoder", "#5b3a8f"],
+    magnet: ["Magnet", "#7d868d", .8], harness: ["Harness", "#2b3034"], bearing_608: ["608 bearing", "#d3d8dc", .85],
+    bolt_m8: ["M8 axle", "#a2a9af", .75], nut_m8: ["M8 nut", "#a2a9af", .75], screw_m3: ["M3 screw", "#8f969c", .7],
+    nut_m3: ["M3 nut", "#8f969c", .7], screw_m4: ["M4 bolt", "#8f969c", .7], nut_m4: ["M4 nut", "#8f969c", .7],
+  };
+  /* Chapters strip the controller from the hand down: build steps belonging to each chapter. */
+  const CHAPTERS = [
+    { name: "Grip", steps: [10, 11] }, { name: "Elbow", steps: [9] }, { name: "Shoulder", steps: [6, 7, 8] },
+    { name: "Yaw", steps: [3, 4] }, { name: "Base", steps: [1, 2, 5] },
+  ];
+  const chapterOfStep = {};
+  CHAPTERS.forEach((c, i) => c.steps.forEach(s => { chapterOfStep[s] = i; }));
+
+  /* Part chips under each chapter card. */
+  const CHIP_SKIP = new Set(["screw_m3", "nut_m3", "screw_m4", "nut_m4", "nut_m8", "harness"]);
+  document.querySelectorAll(".chips[data-steps]").forEach(el => {
+    const steps = el.dataset.steps.split(",").map(Number), counts = new Map();
+    Object.values(META).forEach(m => { if (steps.includes(m.s) && !CHIP_SKIP.has(m.t)) counts.set(m.t, (counts.get(m.t) || 0) + 1); });
+    el.innerHTML = [...counts].map(([t, n]) => `<span><i style="background:${TYPES[t][1]}"></i>${TYPES[t][0]}${n > 1 ? " ×" + n : ""}</span>`).join("");
+  });
+  const rail = document.getElementById("rail");
+  rail.innerHTML = ["Assembled"].concat(CHAPTERS.map(c => c.name), ["All parts"]).map(n => `<li><span>${n}</span><i></i></li>`).join("");
+
+  /* ---------- renderer ---------- */
+  const stage = document.getElementById("stage"), canvas = document.getElementById("td-canvas");
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(30, 1, 5, 8000);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x4b555a, .6));
+  const sun = new THREE.DirectionalLight(0xffffff, .66);
+  sun.position.set(420, 950, 480); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -520, right: 520, top: 520, bottom: -520, near: 100, far: 2600 });
+  sun.shadow.camera.updateProjectionMatrix(); sun.shadow.bias = -0.0005;
+  scene.add(sun);
+  const rim = new THREE.DirectionalLight(0xffffff, .28); rim.position.set(-650, 320, -420); scene.add(rim);
+  const world = new THREE.Group(); world.rotation.x = -Math.PI / 2; scene.add(world);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.ShadowMaterial({ opacity: .16 }));
+  ground.receiveShadow = true; world.add(ground);
+  let grid = null;
+  function themeGrid() {
+    const col = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue("--grid").trim() || "#a9b6bc");
+    if (grid) world.remove(grid);
+    grid = new THREE.GridHelper(1000, 40, col, col);
+    grid.rotation.x = Math.PI / 2; grid.position.z = .2; grid.material.transparent = true; grid.material.opacity = .45;
+    world.add(grid);
+  }
+  themeGrid();
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", themeGrid);
+  new MutationObserver(themeGrid).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  const accent = new THREE.Color();
+  function readAccent() { accent.set(getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#1f6f69"); }
+  readAccent();
+
+  /* ---------- model ---------- */
+  const nodes = [];
+  function onModel(gltf) {
+    gltf.scene.traverse(o => {
+      if (!o.isMesh) return;
+      const key = META[o.name] ? o.name : (o.parent && META[o.parent.name] ? o.parent.name : null);
+      if (!key) return;
+      const m = META[key], ty = TYPES[m.t];
+      o.material = new THREE.MeshStandardMaterial({ color: ty[1], roughness: ty[2] ? .32 : .58, metalness: ty[2] || .04 });
+      if (!o.geometry.attributes.normal) o.geometry.computeVertexNormals();
+      o.castShadow = true; o.receiveShadow = true;
+      nodes.push({ mesh: o, t: m.t, ch: m.t === "harness" ? -1 : chapterOfStep[m.s], off: new THREE.Vector3(m.o[0], m.o[1], m.o[2]) });
+    });
+    world.add(gltf.scene);
+    measure();
+    loadingEl.hidden = true;
+    renderer.setAnimationLoop(tick);
+  }
+  const loader = new THREE.GLTFLoader();
+  if (window.TEARDOWN_GLB_B64) {
+    const bytes = Uint8Array.from(atob(window.TEARDOWN_GLB_B64), c => c.charCodeAt(0));
+    loader.parse(bytes.buffer, "", onModel, e => fail(String(e && e.message || e)));
+  } else {
+    loader.load(MODEL_URL, onModel, undefined, () => fail(`could not fetch ${MODEL_URL}. Serve the page over http(s) next to the model file.`));
+  }
+
+  /* Bounding spheres of the assembled and fully exploded model frame the camera. */
+  const S0 = new THREE.Sphere(), S1 = new THREE.Sphere();
+  function sphereAt(k) {
+    const b = new THREE.Box3(), tb = new THREE.Box3();
+    for (const n of nodes) { if (n.t === "harness") continue; n.mesh.position.copy(n.off).multiplyScalar(k); n.mesh.updateWorldMatrix(true, false); tb.setFromObject(n.mesh); b.union(tb); }
+    return b.getBoundingSphere(new THREE.Sphere());
+  }
+  function measure() { S0.copy(sphereAt(0)); S1.copy(sphereAt(1)); for (const n of nodes) n.mesh.position.set(0, 0, 0); }
+
+  /* ---------- scroll ---------- */
+  const sections = [...document.querySelectorAll(".chapter")];
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const clamp01 = x => Math.max(0, Math.min(1, x));
+  const ease = x => x * x * (3 - 2 * x);
+  let chTarget = new Array(CHAPTERS.length).fill(0), chNow = new Array(CHAPTERS.length).fill(0);
+  let active = 0;
+  function readScroll() {
+    const vh = window.innerHeight;
+    for (let i = 0; i < CHAPTERS.length; i++) {
+      const r = sections[i + 1].getBoundingClientRect();
+      // a chapter starts coming apart as its card rises into view and finishes by the time the card is centred
+      chTarget[i] = ease(clamp01((vh * .95 - r.top) / (vh * .85)));
+    }
+    let a = 0;
+    sections.forEach((s, i) => { const r = s.getBoundingClientRect(); if (r.top < vh * .5) a = i; });
+    if (a !== active) { active = a; }
+    rail.querySelectorAll("li").forEach((li, i) => { li.classList.toggle("on", i === Math.min(active, 6)); li.classList.toggle("done", i < Math.min(active, 6)); });
+    document.getElementById("hint").style.opacity = window.scrollY > 40 || sections[0].getBoundingClientRect().top < -40 ? 0 : 1;
+  }
+  window.addEventListener("scroll", readScroll, { passive: true });
+  window.addEventListener("resize", readScroll);
+  readScroll();
+
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w / h < .8 ? 44 : 30; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stage); resize();
+
+  /* ---------- frame loop ---------- */
+  const clock = new THREE.Clock(), center = new THREE.Vector3(), tmp = new THREE.Vector3();
+  function tick() {
+    const t = clock.getElapsedTime();
+    let total = 0;
+    for (let i = 0; i < chNow.length; i++) {
+      chNow[i] += (chTarget[i] - chNow[i]) * (reduce ? 1 : .1);
+      total += chNow[i];
+    }
+    const prog = total / chNow.length;   // 0 assembled .. 1 fully exploded
+    for (const n of nodes) {
+      if (n.t === "harness") { n.mesh.visible = chNow[0] < .02; continue; }
+      const k = chNow[n.ch];
+      n.mesh.position.copy(n.off).multiplyScalar(k);
+      const live = k > .02 && k < .98;
+      n.mesh.material.emissive.copy(accent);
+      n.mesh.material.emissiveIntensity = live ? .14 * Math.sin(Math.PI * k) / 1 : 0;
+    }
+    // camera: orbit from the operator's front-right toward the motor side, pulling back as the parts spread
+    center.copy(S0.center).lerp(S1.center, prog);
+    const radius = S0.radius + (S1.radius - S0.radius) * prog;
+    const az = THREE.MathUtils.degToRad(38 + 70 * prog + (reduce ? 0 : Math.sin(t * .25) * 3));
+    const el = THREE.MathUtils.degToRad(24 + 10 * prog);
+    tmp.set(Math.cos(az) * Math.cos(el), Math.sin(az) * Math.cos(el), Math.sin(el));   // model frame, Z up
+    const dir = new THREE.Vector3(tmp.x, tmp.z, -tmp.y);
+    const fov = THREE.MathUtils.degToRad(camera.fov), hfov = 2 * Math.atan(Math.tan(fov / 2) * camera.aspect);
+    const wide = camera.aspect > 1.1;
+    const dist = radius / Math.sin(Math.min(fov, hfov) / 2) * (wide ? .92 : .95);
+    const target = center.clone();
+    const fwd = dir.clone().negate(), right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize();
+    const up = new THREE.Vector3().crossVectors(right, fwd).normalize();
+    let wantX = 0, wantY = 0;
+    if (wide) {
+      // keep the model clear of the text: cards on the left for odd chapters, on the right for even ones
+      const cardLeft = active === 0 || active % 2 === 1, none = active >= 7;
+      wantX = none ? 0 : (cardLeft ? -1 : 1) * radius * .42;
+    } else {
+      // phones: hero text sits on top, chapter cards at the bottom
+      const halfH = dist * Math.tan(fov / 2);
+      wantY = active === 0 ? halfH * .38 : active >= 7 ? 0 : -halfH * .42;
+    }
+    const k = reduce ? 1 : .06;
+    shift += (wantX - shift) * k; shiftY += (wantY - shiftY) * k;
+    target.addScaledVector(right, shift).addScaledVector(up, shiftY);
+    camera.position.copy(target).addScaledVector(dir, dist);
+    camera.lookAt(target);
+    renderer.render(scene, camera);
+  }
+  let shift = 0, shiftY = 0;
+})();
+</script>
+
+</body>
+</html>

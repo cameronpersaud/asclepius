@@ -1,38 +1,47 @@
 # Asclepius website
 
-A one-page site for the Asclepius hackathon project. The hero sits over a live 3D model of the hand
-controller; scrolling pulls every part out at once while the camera orbits, then the page continues
-with features, a data-flow diagram, specs, team, FAQ and links.
+A static site for **Asclepius**, a 3D-printed surgical robot trainer with force-feedback hand controllers and a Godot simulator.
 
-## Files
+| Page | File |
+| --- | --- |
+| Home and scroll teardown | `index.html` |
+| Interactive 3D rig | `demo.html` |
+| How it works | `how-it-works.html` |
+| Team | `team.html` |
+| FAQ | `faq.html` |
 
-- `index.html`: the whole page (HTML, CSS and JS in one file; three.js r128 loads from a CDN)
-- `controller.glb`: the controller model, 3.3 MB, one node per part
-- `images/`: feature renders made from the same model (transparent PNG)
+Everything the site needs is in this folder (three.js, the 3D models, images and the simulator video), so there is no build step. The only outside request is Google Fonts.
 
-## Run it
+## Publish on GitHub Pages
 
-The model loads over HTTP, so use a web server rather than opening the file directly:
+1. Create a new repository on GitHub, for example `asclepius`.
+2. Upload the **contents** of this folder to the root of the repository, keeping the `assets` folder as it is. You can drag the files into the GitHub web page ("Add file" → "Upload files"), or from a terminal:
+   ```bash
+   git init
+   git add .
+   git commit -m "Asclepius website"
+   git branch -M main
+   git remote add origin https://github.com/YOUR-USERNAME/asclepius.git
+   git push -u origin main
+   ```
+3. In the repository, open **Settings → Pages**. Under "Build and deployment", set **Source** to "Deploy from a branch", choose the `main` branch and the `/ (root)` folder, and save.
+4. After a minute or two the site is live at `https://YOUR-USERNAME.github.io/asclepius/`.
 
-    cd asclepius_site
-    python3 -m http.server 8000     # then open http://localhost:8000
+The empty `.nojekyll` file tells GitHub Pages to serve the files exactly as they are. If you upload through the web page, check that it was included. Hidden files are sometimes skipped. The site works without it.
 
-Any static host works: GitHub Pages, Netlify, Vercel or your own server.
+## Preview locally
 
-## Fill in the placeholders (marked TBD on the page)
+The 3D pages need to be served over http rather than opened as files:
 
-1. Links: near the bottom of `index.html`, set
-   `window.ASCLEPIUS_LINKS = { devpost: "https://…", demo: "https://…", github: "https://…" }`.
-   Every button with that link updates and loses its TBD badge.
-2. Event name: in the top banner (`<div class="banner">`).
-3. Team: the two `.member` cards. Replace the `?` avatar with initials or an `<img>`.
-4. Simulator footage: replace the `.placeholder` block with
-   `<video src="sim.mp4" autoplay muted loop playsinline></video>` inside a `.media` element.
-5. Check the specs and FAQ against what you actually built before judging.
+```bash
+python3 -m http.server 8000
+```
 
-## Tuning
+Then open http://localhost:8000.
 
-- Teardown length: `.td { height: 430vh }`. Taller is slower.
-- Explode timing: in `tick()`, the hero fades over the first 12 % and the parts spread from 14 % to 80 %.
-- Camera: the `az` and `el` lines in `tick()` set the orbit (degrees).
-- Colours: CSS variables at the top. The page follows the visitor's light or dark setting.
+## Editing
+
+- Text, links and images are plain HTML in each page file.
+- The header, mobile menu and footer are repeated in every page, so change all five when you edit navigation.
+- The teardown animation code is at the bottom of `index.html`. The demo page logic is in `assets/js/demo.js`, and the 3D rig scene is in `assets/js/asclepius-rig-engine.js`.
+- The site follows the visitor's light or dark system setting.

@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asclepius · Demo</title>
+<meta name="description" content="Explore the full Asclepius rig in 3D: hand controllers, electronics tray, pedals and simulator.">
+<meta property="og:title" content="Asclepius · Demo">
+<meta property="og:description" content="Explore the full Asclepius rig in 3D: hand controllers, electronics tray, pedals and simulator.">
+<meta property="og:image" content="assets/img/pair.png">
+<meta name="theme-color" content="#1f6f69">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<style>
+[hidden]{display:none !important}
+body{margin:0}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+.asc{--bg:#f3f6f6;--surface:#ffffff;--panel:#e6ecee;--panel-2:#dbe3e6;--fg:#0d1315;--muted:#586569;--line:#d6dee1;--accent:#1f6f69;--accent-ink:#ffffff;--grid:#b2bec3;--nav:rgba(243,246,246,.8);--stage:#c9d2d7;--floor:#b3bdc2;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;--body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+@media (prefers-color-scheme: dark){.asc:not([data-theme="light"]){--bg:#0b1012;--surface:#11191c;--panel:#131c20;--panel-2:#1a252a;--fg:#e9eff1;--muted:#93a2a7;--line:#223036;--accent:#5cb8b0;--accent-ink:#071012;--grid:#172227;--nav:rgba(11,16,18,.74);--stage:#0f1517;--floor:#1b2427;color-scheme:dark}}
+.asc[data-theme="dark"]{--bg:#0b1012;--surface:#11191c;--panel:#131c20;--panel-2:#1a252a;--fg:#e9eff1;--muted:#93a2a7;--line:#223036;--accent:#5cb8b0;--accent-ink:#071012;--grid:#172227;--nav:rgba(11,16,18,.74);--stage:#0f1517;--floor:#1b2427;color-scheme:dark}
+.asc a{color:inherit}
+.asc a:hover{color:var(--fg)}
+.asc h1,.asc h2,.asc h3{text-wrap:balance}
+.btn{transition:transform .15s ease}
+.btn:hover{transform:translateY(-1px)}
+.asc a:focus-visible,.asc button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.navlinks a{color:var(--muted);text-decoration:none}
+.navlinks a:hover,.navlinks a[aria-current="page"]{color:var(--fg)}
+.tb{font:500 12.5px var(--body);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:0 14px;height:34px;cursor:pointer}
+.tb:hover{border-color:var(--accent)}
+.tb[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.pin{position:absolute;left:0;top:0;display:none;align-items:center;gap:6px;transform:translate(-50%,-50%);font:600 11px/1 var(--mono);font-variant-numeric:tabular-nums;min-width:24px;height:24px;padding:0 7px;border-radius:12px;background:var(--surface);color:var(--fg);border:1.5px solid var(--accent);white-space:nowrap;cursor:pointer;pointer-events:auto}
+.pin span{display:none;font-weight:500}
+.pin:hover,.pin.on{background:var(--accent);color:var(--accent-ink);z-index:2}
+.pin:hover span,.pin.on span{display:inline}
+.item{width:100%;display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;align-items:center;text-align:left;background:transparent;border:1px solid transparent;border-radius:8px;padding:6px 8px;font:400 14px var(--body);color:var(--fg);cursor:pointer;min-height:36px}
+.item:hover{border-color:var(--line)}
+.item[aria-pressed="true"]{border-color:var(--accent)}
+.links{margin:0;padding:0;list-style:none;display:grid;gap:5px}
+.links li{position:relative;padding-left:16px;font:400 13px/1.45 var(--mono)}
+.links li::before{content:"→";position:absolute;left:0;color:var(--accent)}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}.btn{transition:none}}
+@media (max-width: 900px){.navlinks{display:none !important}}
+@media (max-width: 1040px){.demo-grid{grid-template-columns:minmax(0,1fr) !important}}
+@media (max-width: 640px){.stage{aspect-ratio:4 / 5 !important}}
+.mnav{display:none}
+.mnav>summary{list-style:none;width:44px;height:44px;box-sizing:border-box;border-radius:12px;border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;color:var(--fg);background:var(--surface)}
+.mnav>summary::-webkit-details-marker{display:none}
+.mnav .ic-close{display:none}
+.mnav[open] .ic-open{display:none}
+.mnav[open] .ic-close{display:block}
+.mnav[open]>summary{border-color:var(--accent)}
+.mnav-panel{position:absolute;left:0;right:0;top:100%;background:var(--bg);border-bottom:1px solid var(--line);box-shadow:0 24px 48px rgba(0,0,0,.18);padding:6px 16px 20px;display:grid;max-height:calc(100vh - 64px);overflow:auto}
+.mnav-panel a{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:0 4px;border-bottom:1px solid var(--line);font:600 21px var(--display);letter-spacing:-.01em;text-decoration:none;color:var(--fg)}
+.mnav-panel a[aria-current="page"]{color:var(--accent)}
+.mnav-panel a small{font:500 12px var(--mono);letter-spacing:.06em;color:var(--muted)}
+.mnav-panel a.mnav-cta{margin-top:16px;justify-content:center;border:0;border-radius:999px;background:var(--fg);color:var(--bg);font:600 16px var(--body);min-height:52px}
+@media (max-width: 900px){.mnav{display:block}.hdr-wrap{justify-content:flex-start !important;gap:10px !important;padding:0 16px !important}.hdr-wrap>a:first-child{margin-right:auto}.hdr-cta{height:40px !important;padding:0 14px !important;font-size:13px !important}}
+@media (max-width: 560px){.hdr-cta{display:none !important}}
+@media (max-width: 640px){.tb{height:30px !important;padding:0 10px !important;font-size:12px !important}}
+</style>
+<script src="assets/js/three-r128.min.js" defer></script>
+<script src="assets/js/orbitcontrols-r128.js" defer></script>
+<script src="assets/js/gltfloader-r128.js" defer></script>
+<script src="assets/js/asclepius-rig-model.js" defer></script>
+<script src="assets/js/asclepius-rig-engine.js" defer></script>
+<script src="assets/js/demo.js" defer></script>
+</head>
+<body>
+<div class="asc" style="background: var(--bg); color: var(--fg); font: 400 16px/1.6 var(--body); overflow-x: hidden; -webkit-font-smoothing: antialiased">
+  <header style="position: sticky; top: 0; z-index: 50; background: var(--nav); backdrop-filter: saturate(160%) blur(16px); -webkit-backdrop-filter: saturate(160%) blur(16px); border-bottom: 1px solid var(--line)">
+    <div class="hdr-wrap" style="max-width: 1200px; margin: 0 auto; padding: 0 20px; height: 64px; display: flex; align-items: center; gap: 28px; justify-content: space-between">
+      <a href="index.html" aria-label="Asclepius home" style="display: flex; align-items: center; gap: 10px; font: 700 19px var(--display); letter-spacing: -.01em; text-decoration: none; color: var(--fg)">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" style="color: var(--accent)"><path d="M12 2v20"></path><path d="M15.5 5.5c0-1.4-1.6-2.3-3.5-2.3S8.5 4 8.5 5.4c0 3 7 2.2 7 5.4 0 2.6-7 2.2-7 5.2 0 1.7 1.7 2.6 3.5 2.6"></path><circle cx="15.6" cy="5.4" r=".6" fill="currentColor"></circle></svg>
+        Asclepius
+      </a>
+      <nav class="navlinks" aria-label="Sections" style="display: flex; gap: 22px; margin-right: auto; font-size: 14.5px">
+        <a href="index.html#teardown">Inside</a>
+        <a href="demo.html#demo" aria-current="page">Demo</a>
+        <a href="how-it-works.html#how">How it works</a>
+        <a href="team.html#team">Team</a>
+        <a href="faq.html#faq">FAQ</a>
+      </nav>
+      <a class="btn hdr-cta" href="https://devpost.com/software/asclepius-b4c26p" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 14px var(--body); text-decoration: none">View on Devpost</a>
+          <details class="mnav">
+        <summary aria-label="Menu"><svg class="ic-open" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg><svg class="ic-close" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></summary>
+        <nav class="mnav-panel" aria-label="Pages">
+          <a href="index.html">Home<small>The teardown</small></a>
+          <a href="demo.html#demo" aria-current="page">Demo<small>The rig in 3D</small></a>
+          <a href="how-it-works.html#how">How it works<small>Data path and parts</small></a>
+          <a href="team.html#team">Team<small>Who built it</small></a>
+          <a href="faq.html#faq">FAQ<small>Questions</small></a>
+          <a class="mnav-cta" href="https://devpost.com/software/asclepius-b4c26p" target="_blank" rel="noopener">View on Devpost</a>
+        </nav>
+      </details>
+    </div>
+  </header>
+
+  <main id="demo" style="padding: clamp(48px, 6vw, 80px) 20px clamp(64px, 9vw, 110px)">
+    <div style="max-width: 1200px; margin: 0 auto; display: grid; gap: 28px">
+      <div style="display: grid; gap: 14px">
+        <div style="font: 500 12.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent)">Demo</div>
+        <h1 style="margin: 0; font: 700 clamp(32px, 5vw, 60px)/1.02 var(--display); letter-spacing: -.03em">The whole rig, on one bench.</h1>
+        <p style="margin: 0; max-width: 62ch; font-size: clamp(16px, 1.5vw, 19px); color: var(--muted)">Both hand controllers with their motors and encoders, the electronics tray, power and e-stop, foot pedals, and the laptop running the simulator. Drag to orbit, then pick a number or a part to see what it does and what it connects to.</p>
+      </div>
+
+      <div class="demo-grid" style="display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; align-items: start">
+        <div style="display: grid; gap: 14px; min-width: 0">
+          <div class="stage" id="rig-stage" style="position: relative; aspect-ratio: 16 / 10; max-width: 100%; min-width: 0; overflow: hidden; border-radius: 18px; border: 1px solid var(--line); background: var(--stage)">
+            <canvas id="rig-canvas" aria-label="3D view of the complete Asclepius rig" style="display: block; width: 100%; height: 100%; touch-action: none; cursor: grab"></canvas>
+            <div id="rig-pins" style="position: absolute; inset: 0; pointer-events: none; overflow: hidden"></div>
+            <div style="position: absolute; top: 12px; left: 12px; right: 12px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; pointer-events: none">
+              <div id="rig-views" style="display: flex; gap: 6px; flex-wrap: wrap; pointer-events: auto"></div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap; pointer-events: auto">
+                <button type="button" class="tb" id="rig-labels" aria-pressed="true">Labels</button>
+                <button type="button" class="tb" id="rig-wires" aria-pressed="true">Wiring</button>
+              </div>
+            </div>
+            <div style="position: absolute; left: 14px; bottom: 12px; font: 400 12px var(--mono); color: var(--muted); pointer-events: none">mm · operator sits at the near edge · zoom in for board labels</div>
+            <div id="rig-loading" style="position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; font: 400 13px var(--mono); color: var(--muted); background: var(--stage)">Loading the rig…</div>
+          </div>
+          <div id="rig-legend" style="display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted)"></div>
+        </div>
+
+        <aside style="display: grid; gap: 14px; min-width: 0">
+          <section aria-live="polite" style="background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: grid; gap: 10px">
+            <div id="rig-overview" style="display: grid; gap: 10px">
+                <div style="font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted)">The rig</div>
+                <h2 style="margin: 0; font: 700 22px/1.2 var(--display)">Two masters, one tray, one laptop</h2>
+                <p style="margin: 0; font-size: 15px">The UNO Q reads ten encoders and runs force feedback at 400 Hz. The laptop runs the Python bridge and the Godot sim, and sends contact events back for the grips and arms to push against.</p>
+                <ul class="links">
+                  <li>17 kinds of equipment, numbered on the model</li>
+                  <li>Motor power: 12 V → e-stop → 2 × 8 V bucks</li>
+                  <li>Logic power: laptop USB</li>
+                </ul>
+              </div>
+            <div id="rig-selected" hidden style="display: grid; gap: 10px"><div id="sel-meta" style="font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted)"></div><h2 id="sel-name" style="margin: 0; font: 700 22px/1.2 var(--display)"></h2><div id="sel-qty" style="font: 500 12.5px var(--mono); color: var(--accent)"></div><p id="sel-role" style="margin: 0; font-size: 15px"></p><ul id="sel-links" class="links"></ul></div>
+          </section>
+
+          <section style="background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px 12px; display: grid; gap: 12px">
+            <div style="font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 0 8px">Equipment</div>
+            <div id="rig-groups" style="display: grid; gap: 12px"></div>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <footer style="border-top: 1px solid var(--line); padding: 40px 20px 56px; color: var(--muted); font-size: 14px">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 16px 40px; justify-content: space-between; align-items: center">
+      <a href="index.html" style="display: flex; align-items: center; gap: 10px; font: 700 17px var(--display); text-decoration: none; color: var(--fg)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" style="color: var(--accent)"><path d="M12 2v20"></path><path d="M15.5 5.5c0-1.4-1.6-2.3-3.5-2.3S8.5 4 8.5 5.4c0 3 7 2.2 7 5.4 0 2.6-7 2.2-7 5.2 0 1.7 1.7 2.6 3.5 2.6"></path><circle cx="15.6" cy="5.4" r=".6" fill="currentColor"></circle></svg>
+        Asclepius
+      </a>
+      <nav aria-label="Footer" style="display: flex; gap: 20px; flex-wrap: wrap">
+        <a href="index.html#teardown" style="text-decoration: none">Inside</a>
+        <a href="demo.html#demo" style="text-decoration: none">Demo</a>
+        <a href="how-it-works.html#how" style="text-decoration: none">How it works</a>
+        <a href="team.html#team" style="text-decoration: none">Team</a>
+        <a href="faq.html#faq" style="text-decoration: none">FAQ</a>
+      </nav>
+      <span>A hackathon project. Not a medical device.</span>
+    </div>
+  </footer>
+</div>
+</body>
+</html>
